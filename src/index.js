@@ -1,28 +1,30 @@
-import DraftLog from "draftlog";
-import chalk from "chalk";
-import chalkTable from 'chalk-table'
-
 import database from './../database.json' assert {type: "json"}
 import Person from "./person.js";
+import TerminalController from "./terminalController.js";
 
-console.log('database', database)
+const DEFAULT_LANG = 'pt-BR'
+const STOP_TERM = ':q'
 
-DraftLog(console).addLineListener(process.stdin)
+const terminalController = new TerminalController()
+terminalController.initializeTerminal(database, DEFAULT_LANG)
 
-const options = {
-    leftPad: 2,
-    columns: [
-        {field: "id", name: chalk.cyan("ID")},
-        {field: "vehicles", name: chalk.cyan("Vehicles")},
-        {field: "kmTraveled", name: chalk.cyan("Km Traveled")},
-        {field: "from", name: chalk.cyan("From")},
-        {field: "to", name: chalk.cyan("To")},
-    ]
+async function mainLoop () {
+    try {
+        const answer = await terminalController.question('Bom dia?')
+        console.log('answer', answer)
+        if (answer === STOP_TERM) {
+            terminalController.closeTerminal()
+            console.log('process exited')
+            return
+        }
+        // format =  2 bike,aviao,navio 50000 2019-01-02 2020-03-02
+        const person = Person.generateInstanceFromString(answer)
+        console.log('person', person.formatted(DEFAULT_LANG))
+        return mainLoop()
+    } catch (e) {
+        console.log(e)
+    }
 }
-
-const table = chalkTable(options, database.map(item => new Person(item).formatted('pt-BR')))
-const print = console.draft(table)
-
-
+await mainLoop()
 
 
